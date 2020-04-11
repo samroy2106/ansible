@@ -73,7 +73,8 @@ except ImportError:
     # Python 3
     from io import StringIO
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic.utilities import missing_required_lib
+from ansible.module_utils.basic.ansiblemodule import AnsibleModule
 from ansible.module_utils._text import to_native
 from ansible.module_utils.ec2 import HAS_BOTO3, camel_dict_to_snake_dict, ec2_argument_spec, boto3_conn
 from ansible.module_utils.ec2 import get_aws_connection_info, get_aws_region

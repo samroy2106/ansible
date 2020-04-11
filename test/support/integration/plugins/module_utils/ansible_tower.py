@@ -40,7 +40,8 @@ except ImportError:
     TOWER_CLI_IMP_ERR = traceback.format_exc()
     HAS_TOWER_CLI = False
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic.utilities import missing_required_lib
+from ansible.module_utils.basic.ansiblemodule import AnsibleModule
 
 
 def tower_auth_config(module):

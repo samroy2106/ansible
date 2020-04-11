@@ -111,7 +111,8 @@ except ImportError:
     PEXPECT_IMP_ERR = traceback.format_exc()
     HAS_PEXPECT = False
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic.utilities import missing_required_lib
+from ansible.module_utils.basic.ansiblemodule import AnsibleModule
 from ansible.module_utils._text import to_native, to_text
 
 

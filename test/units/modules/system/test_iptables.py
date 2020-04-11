@@ -1,5 +1,5 @@
 from units.compat.mock import patch
-from ansible.module_utils import basic
+from ansible.module_utils.basic import ansiblemodule
 from ansible.modules.system import iptables
 from units.modules.utils import AnsibleExitJson, AnsibleFailJson, ModuleTestCase, set_module_args
 
@@ -16,7 +16,7 @@ class TestIptables(ModuleTestCase):
 
     def setUp(self):
         super(TestIptables, self).setUp()
-        self.mock_get_bin_path = patch.object(basic.AnsibleModule, 'get_bin_path', get_bin_path)
+        self.mock_get_bin_path = patch.object(ansiblemodule.AnsibleModule, 'get_bin_path', get_bin_path)
         self.mock_get_bin_path.start()
         self.addCleanup(self.mock_get_bin_path.stop)  # ensure that the patching is 'undone'
         self.mock_get_iptables_version = patch.object(iptables, 'get_iptables_version', get_iptables_version)
@@ -35,7 +35,7 @@ class TestIptables(ModuleTestCase):
             'flush': True,
         })
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.return_value = 0, '', ''  # successful execution, no output
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -54,7 +54,7 @@ class TestIptables(ModuleTestCase):
             '_ansible_check_mode': True,
         })
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.return_value = 0, '', ''  # successful execution, no output
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -77,7 +77,7 @@ class TestIptables(ModuleTestCase):
             (0, '', '')
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -113,7 +113,7 @@ class TestIptables(ModuleTestCase):
             (0, '', '')
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -141,7 +141,7 @@ class TestIptables(ModuleTestCase):
             (0, 'Chain INPUT (policy DROP)\n', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -178,7 +178,7 @@ class TestIptables(ModuleTestCase):
             (0, '', '')
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -216,7 +216,7 @@ class TestIptables(ModuleTestCase):
             (0, '', '')
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -271,7 +271,7 @@ class TestIptables(ModuleTestCase):
             (1, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -319,7 +319,7 @@ class TestIptables(ModuleTestCase):
             (0, '', '')
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -392,7 +392,7 @@ class TestIptables(ModuleTestCase):
             (0, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -481,7 +481,7 @@ class TestIptables(ModuleTestCase):
             (0, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -530,7 +530,7 @@ class TestIptables(ModuleTestCase):
             (0, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -564,7 +564,7 @@ class TestIptables(ModuleTestCase):
             (0, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -622,7 +622,7 @@ class TestIptables(ModuleTestCase):
             (0, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -680,7 +680,7 @@ class TestIptables(ModuleTestCase):
                 (0, '', ''),
             ]
 
-            with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+            with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
                 run_command.side_effect = commands_results
                 with self.assertRaises(AnsibleExitJson) as result:
                     iptables.main()
@@ -720,7 +720,7 @@ class TestIptables(ModuleTestCase):
                 (0, '', ''),
             ]
 
-            with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+            with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
                 run_command.side_effect = commands_results
                 with self.assertRaises(AnsibleExitJson) as result:
                     iptables.main()
@@ -750,7 +750,7 @@ class TestIptables(ModuleTestCase):
             (0, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -782,7 +782,7 @@ class TestIptables(ModuleTestCase):
             (0, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -815,7 +815,7 @@ class TestIptables(ModuleTestCase):
             (0, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()
@@ -851,7 +851,7 @@ class TestIptables(ModuleTestCase):
             (0, '', ''),
         ]
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(ansiblemodule.AnsibleModule, 'run_command') as run_command:
             run_command.side_effect = commands_results
             with self.assertRaises(AnsibleExitJson) as result:
                 iptables.main()

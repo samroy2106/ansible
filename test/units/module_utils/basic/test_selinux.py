@@ -20,30 +20,30 @@ realimport = builtins.__import__
 
 class TestSELinux(ModuleTestCase):
     def test_module_utils_basic_ansible_module_selinux_mls_enabled(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 
-        basic.HAVE_SELINUX = False
+        ansiblemodule.HAVE_SELINUX = False
         self.assertEqual(am.selinux_mls_enabled(), False)
 
-        basic.HAVE_SELINUX = True
-        basic.selinux = Mock()
-        with patch.dict('sys.modules', {'selinux': basic.selinux}):
+        ansiblemodule.HAVE_SELINUX = True
+        ansiblemodule.selinux = Mock()
+        with patch.dict('sys.modules', {'selinux': ansiblemodule.selinux}):
             with patch('selinux.is_selinux_mls_enabled', return_value=0):
                 self.assertEqual(am.selinux_mls_enabled(), False)
             with patch('selinux.is_selinux_mls_enabled', return_value=1):
                 self.assertEqual(am.selinux_mls_enabled(), True)
-        delattr(basic, 'selinux')
+        delattr(ansiblemodule, 'selinux')
 
     def test_module_utils_basic_ansible_module_selinux_initial_context(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 
@@ -54,10 +54,10 @@ class TestSELinux(ModuleTestCase):
         self.assertEqual(am.selinux_initial_context(), [None, None, None, None])
 
     def test_module_utils_basic_ansible_module_selinux_enabled(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 
@@ -65,7 +65,7 @@ class TestSELinux(ModuleTestCase):
         # not installed, which has two paths: one in which the system
         # does have selinux installed (and the selinuxenabled command
         # is present and returns 0 when run), or selinux is not installed
-        basic.HAVE_SELINUX = False
+        ansiblemodule.HAVE_SELINUX = False
         am.get_bin_path = MagicMock()
         am.get_bin_path.return_value = '/path/to/selinuxenabled'
         am.run_command = MagicMock()
@@ -76,20 +76,20 @@ class TestSELinux(ModuleTestCase):
 
         # finally we test the case where the python selinux lib is installed,
         # and both possibilities there (enabled vs. disabled)
-        basic.HAVE_SELINUX = True
-        basic.selinux = Mock()
-        with patch.dict('sys.modules', {'selinux': basic.selinux}):
+        ansiblemodule.HAVE_SELINUX = True
+        ansiblemodule.selinux = Mock()
+        with patch.dict('sys.modules', {'selinux': ansiblemodule.selinux}):
             with patch('selinux.is_selinux_enabled', return_value=0):
                 self.assertEqual(am.selinux_enabled(), False)
             with patch('selinux.is_selinux_enabled', return_value=1):
                 self.assertEqual(am.selinux_enabled(), True)
-        delattr(basic, 'selinux')
+        delattr(ansiblemodule, 'selinux')
 
     def test_module_utils_basic_ansible_module_selinux_default_context(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 
@@ -97,15 +97,15 @@ class TestSELinux(ModuleTestCase):
         am.selinux_enabled = MagicMock(return_value=True)
 
         # we first test the cases where the python selinux lib is not installed
-        basic.HAVE_SELINUX = False
+        ansiblemodule.HAVE_SELINUX = False
         self.assertEqual(am.selinux_default_context(path='/foo/bar'), [None, None, None, None])
 
         # all following tests assume the python selinux bindings are installed
-        basic.HAVE_SELINUX = True
+        ansiblemodule.HAVE_SELINUX = True
 
-        basic.selinux = Mock()
+        ansiblemodule.selinux = Mock()
 
-        with patch.dict('sys.modules', {'selinux': basic.selinux}):
+        with patch.dict('sys.modules', {'selinux': ansiblemodule.selinux}):
             # next, we test with a mocked implementation of selinux.matchpathcon to simulate
             # an actual context being found
             with patch('selinux.matchpathcon', return_value=[0, 'unconfined_u:object_r:default_t:s0']):
@@ -119,13 +119,13 @@ class TestSELinux(ModuleTestCase):
             with patch('selinux.matchpathcon', side_effect=OSError):
                 self.assertEqual(am.selinux_default_context(path='/foo/bar'), [None, None, None, None])
 
-        delattr(basic, 'selinux')
+        delattr(ansiblemodule, 'selinux')
 
     def test_module_utils_basic_ansible_module_selinux_context(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 
@@ -133,15 +133,15 @@ class TestSELinux(ModuleTestCase):
         am.selinux_enabled = MagicMock(return_value=True)
 
         # we first test the cases where the python selinux lib is not installed
-        basic.HAVE_SELINUX = False
+        ansiblemodule.HAVE_SELINUX = False
         self.assertEqual(am.selinux_context(path='/foo/bar'), [None, None, None, None])
 
         # all following tests assume the python selinux bindings are installed
-        basic.HAVE_SELINUX = True
+        ansiblemodule.HAVE_SELINUX = True
 
-        basic.selinux = Mock()
+        ansiblemodule.selinux = Mock()
 
-        with patch.dict('sys.modules', {'selinux': basic.selinux}):
+        with patch.dict('sys.modules', {'selinux': ansiblemodule.selinux}):
             # next, we test with a mocked implementation of selinux.lgetfilecon_raw to simulate
             # an actual context being found
             with patch('selinux.lgetfilecon_raw', return_value=[0, 'unconfined_u:object_r:default_t:s0']):
@@ -161,18 +161,18 @@ class TestSELinux(ModuleTestCase):
             with patch('selinux.lgetfilecon_raw', side_effect=e):
                 self.assertRaises(SystemExit, am.selinux_context, path='/foo/bar')
 
-        delattr(basic, 'selinux')
+        delattr(ansiblemodule, 'selinux')
 
     def test_module_utils_basic_ansible_module_is_special_selinux_path(self):
-        from ansible.module_utils import basic
+        from ansible.module_utils.basic import ansiblemodule
 
         args = json.dumps(dict(ANSIBLE_MODULE_ARGS={'_ansible_selinux_special_fs': "nfs,nfsd,foos",
                                                     '_ansible_remote_tmp': "/tmp",
                                                     '_ansible_keep_remote_files': False}))
 
         with swap_stdin_and_argv(stdin_data=args):
-            basic._ANSIBLE_ARGS = None
-            am = basic.AnsibleModule(
+            ansiblemodule._ANSIBLE_ARGS = None
+            am = ansiblemodule.AnsibleModule(
                 argument_spec=dict(),
             )
 
@@ -209,27 +209,27 @@ class TestSELinux(ModuleTestCase):
                 self.assertEqual(am.is_special_selinux_path('/weird/random/fstype/path'), (True, ['foo_u', 'foo_r', 'foo_t', 's0']))
 
     def test_module_utils_basic_ansible_module_set_context_if_different(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 
-        basic.HAVE_SELINUX = False
+        ansiblemodule.HAVE_SELINUX = False
 
         am.selinux_enabled = MagicMock(return_value=False)
         self.assertEqual(am.set_context_if_different('/path/to/file', ['foo_u', 'foo_r', 'foo_t', 's0'], True), True)
         self.assertEqual(am.set_context_if_different('/path/to/file', ['foo_u', 'foo_r', 'foo_t', 's0'], False), False)
 
-        basic.HAVE_SELINUX = True
+        ansiblemodule.HAVE_SELINUX = True
 
         am.selinux_enabled = MagicMock(return_value=True)
         am.selinux_context = MagicMock(return_value=['bar_u', 'bar_r', None, None])
         am.is_special_selinux_path = MagicMock(return_value=(False, None))
 
-        basic.selinux = Mock()
-        with patch.dict('sys.modules', {'selinux': basic.selinux}):
+        ansiblemodule.selinux = Mock()
+        with patch.dict('sys.modules', {'selinux': ansiblemodule.selinux}):
             with patch('selinux.lsetfilecon', return_value=0) as m:
                 self.assertEqual(am.set_context_if_different('/path/to/file', ['foo_u', 'foo_r', 'foo_t', 's0'], False), True)
                 m.assert_called_with('/path/to/file', 'foo_u:foo_r:foo_t:s0')
@@ -251,4 +251,4 @@ class TestSELinux(ModuleTestCase):
                 self.assertEqual(am.set_context_if_different('/path/to/file', ['foo_u', 'foo_r', 'foo_t', 's0'], False), True)
                 m.assert_called_with('/path/to/file', 'sp_u:sp_r:sp_t:s0')
 
-        delattr(basic, 'selinux')
+        delattr(ansiblemodule, 'selinux')

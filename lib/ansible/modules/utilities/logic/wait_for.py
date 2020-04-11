@@ -228,7 +228,8 @@ import socket
 import time
 import traceback
 
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic.utilities import missing_required_lib
+from ansible.module_utils.basic.ansiblemodule import AnsibleModule
 from ansible.module_utils.common.sys_info import get_platform_subclass
 from ansible.module_utils._text import to_native
 

@@ -112,9 +112,9 @@ def test_import_from_collection(monkeypatch):
     from ansible_collections.ansible.builtin.plugins.action import command
     assert action.command == command
 
-    from ansible_collections.ansible.builtin.plugins.module_utils import basic
-    from ansible_collections.ansible.builtin.plugins.module_utils.basic import AnsibleModule
-    assert basic.AnsibleModule == AnsibleModule
+    from ansible_collections.ansible.builtin.plugins.module_utils.basic import ansiblemodule
+    from ansible_collections.ansible.builtin.plugins.module_utils.basic.ansiblemodule import AnsibleModule
+    assert ansiblemodule.AnsibleModule == AnsibleModule
 
     # make sure relative imports work from collections code
     # these require __package__ to be set correctly

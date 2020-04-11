@@ -48,9 +48,9 @@ class TestStripComments:
         # test data to show that the lines get removed despite having spaces
         # on them
         all_whitespace = u"""
-              
 
-                
+
+
 \t\t\r\n
             """  # nopep8
         assert amc._strip_comments(all_whitespace) == u""
@@ -140,14 +140,19 @@ class TestDetectionRegexes:
         b'from ansible_collections.my_ns.my_col.plugins.module_utils import my_util',
         b'from ansible_collections.my_ns.my_col.plugins.module_utils.my_util import my_func',
         # Absolute core imports
-        b'import ansible.module_utils.basic',
-        b'from ansible.module_utils import basic',
-        b'from ansible.module_utils.basic import AnsibleModule',
+        b'import ansible.module_utils.basic.ansiblemodule',
+        b'import ansible.module_utils.basic.utilities',
+        b'from ansible.module_utils.basic import ansiblemodule',
+        b'from ansible.module_utils import utilities',
+        b'from ansible.module_utils.basic.ansiblemodule import AnsibleModule',
         # Relative imports
-        b'from ..module_utils import basic',
-        b'from .. module_utils import basic',
-        b'from ....module_utils import basic',
-        b'from ..module_utils.basic import AnsibleModule',
+        b'from ..module_utils.basic import ansiblemodule',
+        b'from ..module_utils.basic import utilities',
+        b'from .. module_utils.basic import ansiblemodule',
+        b'from .. module_utils.basic import utilites',
+        b'from ....module_utils.basic import ansiblemodule',
+        b'from ....module_utils.basic import utilities',
+        b'from ..module_utils.basic.ansiblemodule import AnsibleModule',
     )
     NOT_ANSIBLE_MODULE_UTIL_STRINGS = (
         b'from ansible import release',

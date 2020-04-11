@@ -76,7 +76,7 @@ Importing and using shared code
 
     import traceback
 
-    from ansible.basic import missing_required_lib
+    from ansible.basic.utilities import missing_required_lib
 
     LIB_IMP_ERR = None
     try:

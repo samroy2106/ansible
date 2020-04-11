@@ -16,7 +16,7 @@ import pytest
 from units.compat.mock import patch, MagicMock
 from ansible.module_utils._text import to_bytes
 
-from ansible.module_utils import basic
+from ansible.module_utils.basic import ansiblemodule
 
 
 class TestAnsibleModuleTmpDir:
@@ -79,10 +79,10 @@ class TestAnsibleModuleTmpDir:
         monkeypatch.setattr(os.path, 'exists', lambda x: stat_exists)
         monkeypatch.setattr(os, 'makedirs', mock_makedirs)
         monkeypatch.setattr(shutil, 'rmtree', lambda x: None)
-        monkeypatch.setattr(basic, '_ANSIBLE_ARGS', to_bytes(json.dumps({'ANSIBLE_MODULE_ARGS': args})))
+        monkeypatch.setattr(ansiblemodule, '_ANSIBLE_ARGS', to_bytes(json.dumps({'ANSIBLE_MODULE_ARGS': args})))
 
         with patch('time.time', return_value=42):
-            am = basic.AnsibleModule(argument_spec={})
+            am = ansiblemodule.AnsibleModule(argument_spec={})
             actual_tmpdir = am.tmpdir
 
         assert actual_tmpdir == expected

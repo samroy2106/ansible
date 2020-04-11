@@ -8,7 +8,7 @@ __metaclass__ = type
 
 from units.compat import unittest
 
-from ansible.module_utils.basic import remove_values
+from ansible.module_utils.basic.utilities import remove_values
 from ansible.module_utils.common.parameters import _return_datastructure_name
 
 

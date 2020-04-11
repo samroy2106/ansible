@@ -21,7 +21,7 @@ from __future__ import (absolute_import, division)
 __metaclass__ = type
 
 from units.compat import unittest
-from ansible.module_utils.basic import heuristic_log_sanitize
+from ansible.module_utils.basic.utilities import heuristic_log_sanitize
 
 
 class TestHeuristicLogSanitize(unittest.TestCase):

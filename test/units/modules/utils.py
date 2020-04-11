@@ -2,7 +2,7 @@ import json
 
 from units.compat import unittest
 from units.compat.mock import patch
-from ansible.module_utils import basic
+from ansible.module_utils.basic import ansiblemodule
 from ansible.module_utils._text import to_bytes
 
 
@@ -13,7 +13,7 @@ def set_module_args(args):
         args['_ansible_keep_remote_files'] = False
 
     args = json.dumps({'ANSIBLE_MODULE_ARGS': args})
-    basic._ANSIBLE_ARGS = to_bytes(args)
+    ansiblemodule._ANSIBLE_ARGS = to_bytes(args)
 
 
 class AnsibleExitJson(Exception):
@@ -38,7 +38,7 @@ def fail_json(*args, **kwargs):
 class ModuleTestCase(unittest.TestCase):
 
     def setUp(self):
-        self.mock_module = patch.multiple(basic.AnsibleModule, exit_json=exit_json, fail_json=fail_json)
+        self.mock_module = patch.multiple(ansiblemodule.AnsibleModule, exit_json=exit_json, fail_json=fail_json)
         self.mock_module.start()
         self.mock_sleep = patch('time.sleep')
         self.mock_sleep.start()

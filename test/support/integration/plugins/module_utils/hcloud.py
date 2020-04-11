@@ -8,7 +8,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 from ansible.module_utils.ansible_release import __version__
-from ansible.module_utils.basic import env_fallback, missing_required_lib
+from ansible.module_utils.basic.utilities import env_fallback, missing_required_lib
 
 try:
     import hcloud

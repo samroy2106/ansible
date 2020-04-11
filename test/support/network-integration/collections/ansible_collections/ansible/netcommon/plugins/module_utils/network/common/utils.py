@@ -39,7 +39,8 @@ from itertools import chain
 from ansible.module_utils._text import to_text, to_bytes
 from ansible.module_utils.common._collections_compat import Mapping
 from ansible.module_utils.six import iteritems, string_types
-from ansible.module_utils import basic
+from ansible.module_utils.basic import ansiblemodule
+from ansible.module_utils.basic import utilities
 from ansible.module_utils.parsing.convert_bool import boolean
 
 # Backwards compatibility for 3rd party modules
@@ -218,7 +219,7 @@ class Entity(object):
                         value[name] = fallback_strategy(
                             *fallback_args, **fallback_kwargs
                         )
-                    except basic.AnsibleFallbackNotFound:
+                    except utilities.AnsibleFallbackNotFound:
                         continue
 
             if attr.get("required") and value.get(name) is None:
@@ -496,7 +497,7 @@ def _fallback(fallback):
             args = item
     try:
         return strategy(*args, **kwargs)
-    except basic.AnsibleFallbackNotFound:
+    except utilities.AnsibleFallbackNotFound:
         pass
 
 
@@ -626,10 +627,10 @@ def validate_config(spec, data):
     :param data: Data to be validated
     :return:
     """
-    params = basic._ANSIBLE_ARGS
-    basic._ANSIBLE_ARGS = to_bytes(json.dumps({"ANSIBLE_MODULE_ARGS": data}))
-    validated_data = basic.AnsibleModule(spec).params
-    basic._ANSIBLE_ARGS = params
+    params = ansiblemodule._ANSIBLE_ARGS
+    ansiblemodule._ANSIBLE_ARGS = to_bytes(json.dumps({"ANSIBLE_MODULE_ARGS": data}))
+    validated_data = ansiblemodule.AnsibleModule(spec).params
+    ansiblemodule._ANSIBLE_ARGS = params
     return validated_data
 
 

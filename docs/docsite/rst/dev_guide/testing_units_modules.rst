@@ -366,7 +366,7 @@ method needs to be mocked:
 
 Here is a simple mock of :meth:`AnsibleModule.run_command` (taken from :file:`test/units/modules/packaging/os/test_rhn_register.py`)::
 
-        with patch.object(basic.AnsibleModule, 'run_command') as run_command:
+        with patch.object(AnsibleModule, 'run_command') as run_command:
             run_command.return_value = 0, '', ''  # successful execution, no output
                 with self.assertRaises(AnsibleExitJson) as result:
                     self.module.main()
@@ -387,7 +387,8 @@ mock for :meth:`Ansible.get_bin_path`::
 
     from units.compat import unittest
     from units.compat.mock import patch
-    from ansible.module_utils import basic
+    from ansible.module_utils.basic import ansiblemodule
+    from ansible.module_utils.basic.ansiblemodule import AnsibleModule
     from ansible.module_utils._text import to_bytes
     from ansible.modules.namespace import my_module
 
@@ -395,7 +396,7 @@ mock for :meth:`Ansible.get_bin_path`::
     def set_module_args(args):
         """prepare arguments so that they will be picked up during module creation"""
         args = json.dumps({'ANSIBLE_MODULE_ARGS': args})
-        basic._ANSIBLE_ARGS = to_bytes(args)
+        ansiblemodule._ANSIBLE_ARGS = to_bytes(args)
 
 
     class AnsibleExitJson(Exception):
@@ -433,7 +434,7 @@ mock for :meth:`Ansible.get_bin_path`::
     class TestMyModule(unittest.TestCase):
 
         def setUp(self):
-            self.mock_module_helper = patch.multiple(basic.AnsibleModule,
+            self.mock_module_helper = patch.multiple(AnsibleModule,
                                                      exit_json=exit_json,
                                                      fail_json=fail_json,
                                                      get_bin_path=get_bin_path)
@@ -452,7 +453,7 @@ mock for :meth:`Ansible.get_bin_path`::
                 'param2': 'test',
             })
 
-            with patch.object(basic.AnsibleModule, 'run_command') as mock_run_command:
+            with patch.object(AnsibleModule, 'run_command') as mock_run_command:
                 stdout = 'configuration updated'
                 stderr = ''
                 rc = 0

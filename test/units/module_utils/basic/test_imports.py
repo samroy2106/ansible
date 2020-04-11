@@ -32,14 +32,14 @@ class TestImports(ModuleTestCase):
                 raise ImportError
             return realimport(name, *args, **kwargs)
 
-        self.clear_modules(['syslog', 'ansible.module_utils.basic'])
-        mod = builtins.__import__('ansible.module_utils.basic')
-        self.assertTrue(mod.module_utils.basic.HAS_SYSLOG)
+        self.clear_modules(['syslog', 'ansible.module_utils.basic.utilities'])
+        mod = builtins.__import__('ansible.module_utils.basic.utilities')
+        self.assertTrue(mod.module_utils.basic.utilities.HAS_SYSLOG)
 
-        self.clear_modules(['syslog', 'ansible.module_utils.basic'])
+        self.clear_modules(['syslog', 'ansible.module_utils.basic.utilities'])
         mock_import.side_effect = _mock_import
-        mod = builtins.__import__('ansible.module_utils.basic')
-        self.assertFalse(mod.module_utils.basic.HAS_SYSLOG)
+        mod = builtins.__import__('ansible.module_utils.basic.utilities')
+        self.assertFalse(mod.module_utils.basic.utilities.HAS_SYSLOG)
 
     @patch.object(builtins, '__import__')
     def test_module_utils_basic_import_selinux(self, mock_import):
@@ -49,17 +49,17 @@ class TestImports(ModuleTestCase):
             return realimport(name, *args, **kwargs)
 
         try:
-            self.clear_modules(['selinux', 'ansible.module_utils.basic'])
-            mod = builtins.__import__('ansible.module_utils.basic')
-            self.assertTrue(mod.module_utils.basic.HAVE_SELINUX)
+            self.clear_modules(['selinux', 'ansible.module_utils.basic.utilities'])
+            mod = builtins.__import__('ansible.module_utils.basic.utilities')
+            self.assertTrue(mod.module_utils.basic.utilities.HAVE_SELINUX)
         except ImportError:
             # no selinux on test system, so skip
             pass
 
-        self.clear_modules(['selinux', 'ansible.module_utils.basic'])
+        self.clear_modules(['selinux', 'ansible.module_utils.basic.utilities'])
         mock_import.side_effect = _mock_import
-        mod = builtins.__import__('ansible.module_utils.basic')
-        self.assertFalse(mod.module_utils.basic.HAVE_SELINUX)
+        mod = builtins.__import__('ansible.module_utils.basic.utilities')
+        self.assertFalse(mod.module_utils.basic.utilities.HAVE_SELINUX)
 
     @patch.object(builtins, '__import__')
     def test_module_utils_basic_import_json(self, mock_import):
@@ -68,18 +68,18 @@ class TestImports(ModuleTestCase):
                 raise ImportError
             return realimport(name, *args, **kwargs)
 
-        self.clear_modules(['json', 'ansible.module_utils.basic'])
-        builtins.__import__('ansible.module_utils.basic')
-        self.clear_modules(['json', 'ansible.module_utils.basic'])
+        self.clear_modules(['json', 'ansible.module_utils.basic.utilities'])
+        builtins.__import__('ansible.module_utils.basic.utilities')
+        self.clear_modules(['json', 'ansible.module_utils.basic.utilities'])
         mock_import.side_effect = _mock_import
         with self.assertRaises(SystemExit):
-            builtins.__import__('ansible.module_utils.basic')
+            builtins.__import__('ansible.module_utils.basic.utilities')
 
     # FIXME: doesn't work yet
     # @patch.object(builtins, 'bytes')
     # def test_module_utils_basic_bytes(self, mock_bytes):
     #     mock_bytes.side_effect = NameError()
-    #     from ansible.module_utils import basic
+    #     from ansible.module_utils.basic import utilities
 
     @patch.object(builtins, '__import__')
     @unittest.skipIf(sys.version_info[0] >= 3, "literal_eval is available in every version of Python3")
@@ -94,18 +94,18 @@ class TestImports(ModuleTestCase):
             return realimport(name, *args, **kwargs)
 
         mock_import.side_effect = _mock_import
-        self.clear_modules(['ast', 'ansible.module_utils.basic'])
-        mod = builtins.__import__('ansible.module_utils.basic')
-        self.assertEqual(mod.module_utils.basic.literal_eval("'1'"), "1")
-        self.assertEqual(mod.module_utils.basic.literal_eval("1"), 1)
-        self.assertEqual(mod.module_utils.basic.literal_eval("-1"), -1)
-        self.assertEqual(mod.module_utils.basic.literal_eval("(1,2,3)"), (1, 2, 3))
-        self.assertEqual(mod.module_utils.basic.literal_eval("[1]"), [1])
-        self.assertEqual(mod.module_utils.basic.literal_eval("True"), True)
-        self.assertEqual(mod.module_utils.basic.literal_eval("False"), False)
-        self.assertEqual(mod.module_utils.basic.literal_eval("None"), None)
-        # self.assertEqual(mod.module_utils.basic.literal_eval('{"a": 1}'), dict(a=1))
-        self.assertRaises(ValueError, mod.module_utils.basic.literal_eval, "asdfasdfasdf")
+        self.clear_modules(['ast', 'ansible.module_utils.basic.utilities'])
+        mod = builtins.__import__('ansible.module_utils.basic.utilities')
+        self.assertEqual(mod.module_utils.basic.utilities.literal_eval("'1'"), "1")
+        self.assertEqual(mod.module_utils.basic.utilities.literal_eval("1"), 1)
+        self.assertEqual(mod.module_utils.basic.utilities.literal_eval("-1"), -1)
+        self.assertEqual(mod.module_utils.basic.utilities.literal_eval("(1,2,3)"), (1, 2, 3))
+        self.assertEqual(mod.module_utils.basic.utilities.literal_eval("[1]"), [1])
+        self.assertEqual(mod.module_utils.basic.utilities.literal_eval("True"), True)
+        self.assertEqual(mod.module_utils.basic.utilities.literal_eval("False"), False)
+        self.assertEqual(mod.module_utils.basic.utilities.literal_eval("None"), None)
+        # self.assertEqual(mod.module_utils.basic.utilities.literal_eval('{"a": 1}'), dict(a=1))
+        self.assertRaises(ValueError, mod.module_utils.basic.utilities.literal_eval, "asdfasdfasdf")
 
     @patch.object(builtins, '__import__')
     def test_module_utils_basic_import_systemd_journal(self, mock_import):
@@ -118,11 +118,11 @@ class TestImports(ModuleTestCase):
                 raise ImportError
             return realimport(name, *args, **kwargs)
 
-        self.clear_modules(['systemd', 'ansible.module_utils.basic'])
-        mod = builtins.__import__('ansible.module_utils.basic')
-        self.assertTrue(mod.module_utils.basic.has_journal)
+        self.clear_modules(['systemd', 'ansible.module_utils.basic.utilities'])
+        mod = builtins.__import__('ansible.module_utils.basic.utilities')
+        self.assertTrue(mod.module_utils.basic.utilities.has_journal)
 
-        self.clear_modules(['systemd', 'ansible.module_utils.basic'])
+        self.clear_modules(['systemd', 'ansible.module_utils.basic.utilities'])
         mock_import.side_effect = _mock_import
-        mod = builtins.__import__('ansible.module_utils.basic')
-        self.assertFalse(mod.module_utils.basic.has_journal)
+        mod = builtins.__import__('ansible.module_utils.basic.utilities')
+        self.assertFalse(mod.module_utils.basic.utilities.has_journal)

@@ -35,7 +35,7 @@ import sys
 import traceback
 
 from ansible.module_utils.ansible_release import __version__
-from ansible.module_utils.basic import missing_required_lib, env_fallback
+from ansible.module_utils.basic.utilities import missing_required_lib, env_fallback
 from ansible.module_utils._text import to_native, to_text
 from ansible.module_utils.cloud import CloudRetry
 from ansible.module_utils.six import string_types, binary_type, text_type

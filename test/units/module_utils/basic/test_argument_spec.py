@@ -13,7 +13,7 @@ import os
 import pytest
 
 from units.compat.mock import MagicMock
-from ansible.module_utils import basic
+from ansible.module_utils.basic import ansiblemodule
 from ansible.module_utils.common.warnings import get_deprecation_messages, get_warning_messages
 from ansible.module_utils.six import integer_types
 from ansible.module_utils.six.moves import builtins
@@ -98,7 +98,7 @@ def complex_argspec():
         bing=dict(),
         bang=dict(),
         bong=dict(),
-        baz=dict(fallback=(basic.env_fallback, ['BAZ'])),
+        baz=dict(fallback=(basic.utilities.env_fallback, ['BAZ'])),
         bar1=dict(type='bool'),
         bar3=dict(type='list', elements='path'),
         zardoz=dict(choices=['one', 'two']),
@@ -187,7 +187,7 @@ def options_argspec_dict(options_argspec_list):
                          indirect=['stdin'])
 def test_validator_basic_types(argspec, expected, stdin):
 
-    am = basic.AnsibleModule(argspec)
+    am = ansiblemodule.AnsibleModule(argspec)
 
     if 'type' in argspec['arg']:
         if argspec['arg']['type'] == 'int':
@@ -206,7 +206,7 @@ def test_validator_function(mocker, stdin):
     # Type is a callable
     MOCK_VALIDATOR_SUCCESS = mocker.MagicMock(return_value=27)
     argspec = {'arg': {'type': MOCK_VALIDATOR_SUCCESS}}
-    am = basic.AnsibleModule(argspec)
+    am = ansiblemodule.AnsibleModule(argspec)
 
     assert isinstance(am.params['arg'], integer_types)
     assert am.params['arg'] == 27
@@ -216,7 +216,7 @@ def test_validator_function(mocker, stdin):
                          indirect=['stdin'])
 def test_validator_fail(stdin, capfd, argspec, expected):
     with pytest.raises(SystemExit):
-        basic.AnsibleModule(argument_spec=argspec)
+        ansiblemodule.AnsibleModule(argument_spec=argspec)
 
     out, err = capfd.readouterr()
     assert not err
@@ -230,14 +230,14 @@ class TestComplexArgSpecs:
     @pytest.mark.parametrize('stdin', [{'foo': 'hello'}, {'dup': 'hello'}], indirect=['stdin'])
     def test_complex_required(self, stdin, complex_argspec):
         """Test that the complex argspec works if we give it its required param as either the canonical or aliased name"""
-        am = basic.AnsibleModule(**complex_argspec)
+        am = ansiblemodule.AnsibleModule(**complex_argspec)
         assert isinstance(am.params['foo'], str)
         assert am.params['foo'] == 'hello'
 
     @pytest.mark.parametrize('stdin', [{'foo': 'hello1', 'dup': 'hello2'}], indirect=['stdin'])
     def test_complex_duplicate_warning(self, stdin, complex_argspec):
         """Test that the complex argspec issues a warning if we specify an option both with its canonical name and its alias"""
-        am = basic.AnsibleModule(**complex_argspec)
+        am = ansiblemodule.AnsibleModule(**complex_argspec)
         assert isinstance(am.params['foo'], str)
         assert 'Both option foo and its alias dup are set.' in get_warning_messages()
         assert am.params['foo'] == 'hello2'
@@ -249,7 +249,7 @@ class TestComplexArgSpecs:
         environ['BAZ'] = 'test data'
         mocker.patch('ansible.module_utils.basic.os.environ', environ)
 
-        am = basic.AnsibleModule(**complex_argspec)
+        am = ansiblemodule.AnsibleModule(**complex_argspec)
 
         assert isinstance(am.params['baz'], str)
         assert am.params['baz'] == 'test data'
@@ -258,7 +258,7 @@ class TestComplexArgSpecs:
     def test_fail_mutually_exclusive(self, capfd, stdin, complex_argspec):
         """Fail because of mutually exclusive parameters"""
         with pytest.raises(SystemExit):
-            am = basic.AnsibleModule(**complex_argspec)
+            am = ansiblemodule.AnsibleModule(**complex_argspec)
 
         out, err = capfd.readouterr()
         results = json.loads(out)
@@ -270,7 +270,7 @@ class TestComplexArgSpecs:
     def test_fail_required_together(self, capfd, stdin, complex_argspec):
         """Fail because only one of a required_together pair of parameters was specified"""
         with pytest.raises(SystemExit):
-            am = basic.AnsibleModule(**complex_argspec)
+            am = ansiblemodule.AnsibleModule(**complex_argspec)
 
         out, err = capfd.readouterr()
         results = json.loads(out)
@@ -283,7 +283,7 @@ class TestComplexArgSpecs:
         """Fail because one of a required_together pair of parameters has a default and the other was not specified"""
         complex_argspec['argument_spec']['baz'] = {'default': 42}
         with pytest.raises(SystemExit):
-            am = basic.AnsibleModule(**complex_argspec)
+            am = ansiblemodule.AnsibleModule(**complex_argspec)
 
         out, err = capfd.readouterr()
         results = json.loads(out)
@@ -299,7 +299,7 @@ class TestComplexArgSpecs:
         mocker.patch('ansible.module_utils.basic.os.environ', environ)
 
         with pytest.raises(SystemExit):
-            am = basic.AnsibleModule(**complex_argspec)
+            am = ansiblemodule.AnsibleModule(**complex_argspec)
 
         out, err = capfd.readouterr()
         results = json.loads(out)
@@ -311,7 +311,7 @@ class TestComplexArgSpecs:
     def test_fail_list_with_choices(self, capfd, mocker, stdin, complex_argspec):
         """Fail because one of the items is not in the choice"""
         with pytest.raises(SystemExit):
-            basic.AnsibleModule(**complex_argspec)
+            ansiblemodule.AnsibleModule(**complex_argspec)
 
         out, err = capfd.readouterr()
         results = json.loads(out)
@@ -322,14 +322,14 @@ class TestComplexArgSpecs:
     @pytest.mark.parametrize('stdin', [{'foo': 'hello', 'zardoz2': ['one', 'three']}], indirect=['stdin'])
     def test_list_with_choices(self, capfd, mocker, stdin, complex_argspec):
         """Test choices with list"""
-        am = basic.AnsibleModule(**complex_argspec)
+        am = ansiblemodule.AnsibleModule(**complex_argspec)
         assert isinstance(am.params['zardoz2'], list)
         assert am.params['zardoz2'] == ['one', 'three']
 
     @pytest.mark.parametrize('stdin', [{'foo': 'hello', 'bar3': ['~/test', 'test/']}], indirect=['stdin'])
     def test_list_with_elements_path(self, capfd, mocker, stdin, complex_argspec):
         """Test choices with list"""
-        am = basic.AnsibleModule(**complex_argspec)
+        am = ansiblemodule.AnsibleModule(**complex_argspec)
         assert isinstance(am.params['bar3'], list)
         assert am.params['bar3'][0].startswith('/')
         assert am.params['bar3'][1] == 'test/'
@@ -337,7 +337,7 @@ class TestComplexArgSpecs:
     @pytest.mark.parametrize('stdin', [{'foo': 'hello', 'zodraz': 'one'}], indirect=['stdin'])
     def test_deprecated_alias(self, capfd, mocker, stdin, complex_argspec):
         """Test a deprecated alias"""
-        am = basic.AnsibleModule(**complex_argspec)
+        am = ansiblemodule.AnsibleModule(**complex_argspec)
 
         assert "Alias 'zodraz' is deprecated." in get_deprecation_messages()[0]['msg']
         assert get_deprecation_messages()[0]['version'] == '9.99'
@@ -467,7 +467,7 @@ class TestComplexOptions:
     def test_options_type_dict(self, stdin, options_argspec_dict, expected):
         """Test that a basic creation with required and required_if works"""
         # should test ok, tests basic foo requirement and required_if
-        am = basic.AnsibleModule(**options_argspec_dict)
+        am = ansiblemodule.AnsibleModule(**options_argspec_dict)
 
         assert isinstance(am.params['foobar'], dict)
         assert am.params['foobar'] == expected
@@ -476,7 +476,7 @@ class TestComplexOptions:
     def test_options_type_list(self, stdin, options_argspec_list, expected):
         """Test that a basic creation with required and required_if works"""
         # should test ok, tests basic foo requirement and required_if
-        am = basic.AnsibleModule(**options_argspec_list)
+        am = ansiblemodule.AnsibleModule(**options_argspec_list)
 
         assert isinstance(am.params['foobar'], list)
         assert am.params['foobar'] == expected
@@ -485,7 +485,7 @@ class TestComplexOptions:
     def test_fail_validate_options_dict(self, capfd, stdin, options_argspec_dict, expected):
         """Fail because one of a required_together pair of parameters has a default and the other was not specified"""
         with pytest.raises(SystemExit):
-            am = basic.AnsibleModule(**options_argspec_dict)
+            am = ansiblemodule.AnsibleModule(**options_argspec_dict)
 
         out, err = capfd.readouterr()
         results = json.loads(out)
@@ -497,7 +497,7 @@ class TestComplexOptions:
     def test_fail_validate_options_list(self, capfd, stdin, options_argspec_list, expected):
         """Fail because one of a required_together pair of parameters has a default and the other was not specified"""
         with pytest.raises(SystemExit):
-            am = basic.AnsibleModule(**options_argspec_list)
+            am = ansiblemodule.AnsibleModule(**options_argspec_list)
 
         out, err = capfd.readouterr()
         results = json.loads(out)
@@ -512,7 +512,7 @@ class TestComplexOptions:
         environ['BAZ'] = 'test data'
         mocker.patch('ansible.module_utils.basic.os.environ', environ)
 
-        am = basic.AnsibleModule(**options_argspec_dict)
+        am = ansiblemodule.AnsibleModule(**options_argspec_dict)
 
         assert isinstance(am.params['foobar']['baz'], str)
         assert am.params['foobar']['baz'] == 'test data'
@@ -523,7 +523,7 @@ class TestComplexOptions:
     def test_elements_path_in_option(self, mocker, stdin, options_argspec_dict):
         """Test that the complex argspec works with elements path type"""
 
-        am = basic.AnsibleModule(**options_argspec_dict)
+        am = ansiblemodule.AnsibleModule(**options_argspec_dict)
 
         assert isinstance(am.params['foobar']['bar4'][0], str)
         assert am.params['foobar']['bar4'][0].startswith('/')
@@ -538,7 +538,7 @@ class TestComplexOptions:
     ], indirect=['stdin'])
     def test_subspec_not_required_defaults(self, stdin, spec, expected):
         # Check that top level not required, processed subspec defaults
-        am = basic.AnsibleModule(spec)
+        am = ansiblemodule.AnsibleModule(spec)
         assert am.params['one'] == expected
 
 
@@ -602,7 +602,7 @@ def test_no_log_true(stdin, capfd):
     arg_spec = {
         "arg_pass": {"no_log": True}
     }
-    am = basic.AnsibleModule(arg_spec)
+    am = ansiblemodule.AnsibleModule(arg_spec)
     # no_log=True is picked up by both am._log_invocation and list_no_log_values
     # (called by am._handle_no_log_values). As a result, we can check for the
     # value in am.no_log_values.
@@ -615,7 +615,7 @@ def test_no_log_false(stdin, capfd):
     arg_spec = {
         "arg_pass": {"no_log": False}
     }
-    am = basic.AnsibleModule(arg_spec)
+    am = ansiblemodule.AnsibleModule(arg_spec)
     assert "testing" not in am.no_log_values and not get_warning_messages()
 
 
@@ -626,7 +626,7 @@ def test_no_log_none(stdin, capfd):
     arg_spec = {
         "arg_pass": {}
     }
-    am = basic.AnsibleModule(arg_spec)
+    am = ansiblemodule.AnsibleModule(arg_spec)
     # Omitting no_log is only picked up by _log_invocation, so the value never
     # makes it into am.no_log_values. Instead we can check for the warning
     # emitted by am._log_invocation.
