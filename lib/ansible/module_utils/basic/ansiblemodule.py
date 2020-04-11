@@ -1,3 +1,238 @@
+import __main__
+import atexit
+import errno
+import datetime
+import grp
+import fcntl
+import locale
+import os
+import pwd
+import platform
+import re
+import select
+import shlex
+import shutil
+import signal
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+import traceback
+import types
+
+from collections import deque
+from itertools import chain, repeat
+
+try:
+    import syslog
+    HAS_SYSLOG = True
+except ImportError:
+    HAS_SYSLOG = False
+
+try:
+    from systemd import journal
+    has_journal = True
+except ImportError:
+    has_journal = False
+
+HAVE_SELINUX = False
+try:
+    import selinux
+    HAVE_SELINUX = True
+except ImportError:
+    pass
+
+# Python2 & 3 way to get NoneType
+NoneType = type(None)
+
+from ._text import to_native, to_bytes, to_text
+from ansible.module_utils.common.text.converters import (
+    jsonify,
+    container_to_bytes as json_dict_unicode_to_bytes,
+    container_to_text as json_dict_bytes_to_unicode,
+)
+
+from ansible.module_utils.common.text.formatters import (
+    lenient_lowercase,
+    bytes_to_human,
+    human_to_bytes,
+    SIZE_RANGES,
+)
+
+try:
+    from ansible.module_utils.common._json_compat import json
+except ImportError as e:
+    print('\n{{"msg": "Error: ansible requires the stdlib json: {0}", "failed": true}}'.format(to_native(e)))
+    sys.exit(1)
+
+
+AVAILABLE_HASH_ALGORITHMS = dict()
+try:
+    import hashlib
+
+    # python 2.7.9+ and 2.7.0+
+    for attribute in ('available_algorithms', 'algorithms'):
+        algorithms = getattr(hashlib, attribute, None)
+        if algorithms:
+            break
+    if algorithms is None:
+        # python 2.5+
+        algorithms = ('md5', 'sha1', 'sha224', 'sha256', 'sha384', 'sha512')
+    for algorithm in algorithms:
+        AVAILABLE_HASH_ALGORITHMS[algorithm] = getattr(hashlib, algorithm)
+
+    # we may have been able to import md5 but it could still not be available
+    try:
+        hashlib.md5()
+    except ValueError:
+        AVAILABLE_HASH_ALGORITHMS.pop('md5', None)
+except Exception:
+    import sha
+    AVAILABLE_HASH_ALGORITHMS = {'sha1': sha.sha}
+    try:
+        import md5
+        AVAILABLE_HASH_ALGORITHMS['md5'] = md5.md5
+    except Exception:
+        pass
+
+from ansible.module_utils.common._collections_compat import (
+    KeysView,
+    Mapping, MutableMapping,
+    Sequence, MutableSequence,
+    Set, MutableSet,
+)
+from ansible.module_utils.common.process import get_bin_path
+from ansible.module_utils.common.file import (
+    _PERM_BITS as PERM_BITS,
+    _EXEC_PERM_BITS as EXEC_PERM_BITS,
+    _DEFAULT_PERM as DEFAULT_PERM,
+    is_executable,
+    format_attributes,
+    get_flags_from_attributes,
+)
+from ansible.module_utils.common.sys_info import (
+    get_distribution,
+    get_distribution_version,
+    get_platform_subclass,
+)
+from ansible.module_utils.pycompat24 import get_exception, literal_eval
+from ansible.module_utils.common.parameters import (
+    handle_aliases,
+    list_deprecations,
+    list_no_log_values,
+    PASS_VARS,
+    PASS_BOOLS,
+)
+
+from ansible.module_utils.six import (
+    PY2,
+    PY3,
+    b,
+    binary_type,
+    integer_types,
+    iteritems,
+    string_types,
+    text_type,
+)
+from ansible.module_utils.six.moves import map, reduce, shlex_quote
+from ansible.module_utils.common.validation import (
+    check_missing_parameters,
+    check_mutually_exclusive,
+    check_required_arguments,
+    check_required_by,
+    check_required_if,
+    check_required_one_of,
+    check_required_together,
+    count_terms,
+    check_type_bool,
+    check_type_bits,
+    check_type_bytes,
+    check_type_float,
+    check_type_int,
+    check_type_jsonarg,
+    check_type_list,
+    check_type_dict,
+    check_type_path,
+    check_type_raw,
+    check_type_str,
+    safe_eval,
+)
+from ansible.module_utils.common._utils import get_all_subclasses as _get_all_subclasses
+from ansible.module_utils.parsing.convert_bool import BOOLEANS, BOOLEANS_FALSE, BOOLEANS_TRUE, boolean
+from ansible.module_utils.common.warnings import (
+    deprecate,
+    get_deprecation_messages,
+    get_warning_messages,
+    warn,
+)
+
+# Note: When getting Sequence from collections, it matches with strings. If
+# this matters, make sure to check for strings before checking for sequencetype
+SEQUENCETYPE = frozenset, KeysView, Sequence
+
+PASSWORD_MATCH = re.compile(r'^(?:.+[-_\s])?pass(?:[-_\s]?(?:word|phrase|wrd|wd)?)(?:[-_\s].+)?$', re.I)
+
+imap = map
+
+try:
+    # Python 2
+    unicode
+except NameError:
+    # Python 3
+    unicode = text_type
+
+try:
+    # Python 2
+    basestring
+except NameError:
+    # Python 3
+    basestring = string_types
+
+_literal_eval = literal_eval
+
+# End of deprecated names
+
+# Internal global holding passed in params.  This is consulted in case
+# multiple AnsibleModules are created.  Otherwise each AnsibleModule would
+# attempt to read from stdin.  Other code should not use this directly as it
+# is an internal implementation detail
+_ANSIBLE_ARGS = None
+
+FILE_COMMON_ARGUMENTS = dict(
+    # These are things we want. About setting metadata (mode, ownership, permissions in general) on
+    # created files (these are used by set_fs_attributes_if_different and included in
+    # load_file_common_arguments)
+    mode=dict(type='raw'),
+    owner=dict(type='str'),
+    group=dict(type='str'),
+    seuser=dict(type='str'),
+    serole=dict(type='str'),
+    selevel=dict(type='str'),
+    setype=dict(type='str'),
+    attributes=dict(type='str', aliases=['attr']),
+    unsafe_writes=dict(type='bool', default=False),  # should be available to any module using atomic_move
+)
+
+PASSWD_ARG_RE = re.compile(r'^[-]{0,2}pass[-]?(word|wd)?')
+
+# Used for parsing symbolic file perms
+MODE_OPERATOR_RE = re.compile(r'[+=-]')
+USERS_RE = re.compile(r'[^ugo]')
+PERMS_RE = re.compile(r'[^rwxXstugo]')
+
+# Used for determining if the system is running a new enough python version
+# and should only restrict on our documented minimum versions
+_PY3_MIN = sys.version_info[:2] >= (3, 5)
+_PY2_MIN = (2, 6) <= sys.version_info[:2] < (3,)
+_PY_MIN = _PY3_MIN or _PY2_MIN
+if not _PY_MIN:
+    print(
+        '\n{"failed": true, '
+        '"msg": "Ansible requires a minimum of Python2 version 2.6 or Python3 version 3.5. Current version: %s"}' % ''.join(sys.version.splitlines())
+    )
+    sys.exit(1)
+
 class AnsibleModule(object):
     def __init__(self, argument_spec, bypass_checks=False, no_log=False,
                  mutually_exclusive=None, required_together=None,
@@ -203,74 +438,6 @@ class AnsibleModule(object):
             selevel=selevel, secontext=secontext, attributes=attributes,
         )
 
-    # Detect whether using selinux that is MLS-aware.
-    # While this means you can set the level/range with
-    # selinux.lsetfilecon(), it may or may not mean that you
-    # will get the selevel as part of the context returned
-    # by selinux.lgetfilecon().
-
-    def selinux_mls_enabled(self):
-        if not HAVE_SELINUX:
-            return False
-        if selinux.is_selinux_mls_enabled() == 1:
-            return True
-        else:
-            return False
-
-    def selinux_enabled(self):
-        if not HAVE_SELINUX:
-            seenabled = self.get_bin_path('selinuxenabled')
-            if seenabled is not None:
-                (rc, out, err) = self.run_command(seenabled)
-                if rc == 0:
-                    self.fail_json(msg="Aborting, target uses selinux but python bindings (libselinux-python) aren't installed!")
-            return False
-        if selinux.is_selinux_enabled() == 1:
-            return True
-        else:
-            return False
-
-    # Determine whether we need a placeholder for selevel/mls
-    def selinux_initial_context(self):
-        context = [None, None, None]
-        if self.selinux_mls_enabled():
-            context.append(None)
-        return context
-
-    # If selinux fails to find a default, return an array of None
-    def selinux_default_context(self, path, mode=0):
-        context = self.selinux_initial_context()
-        if not HAVE_SELINUX or not self.selinux_enabled():
-            return context
-        try:
-            ret = selinux.matchpathcon(to_native(path, errors='surrogate_or_strict'), mode)
-        except OSError:
-            return context
-        if ret[0] == -1:
-            return context
-        # Limit split to 4 because the selevel, the last in the list,
-        # may contain ':' characters
-        context = ret[1].split(':', 3)
-        return context
-
-    def selinux_context(self, path):
-        context = self.selinux_initial_context()
-        if not HAVE_SELINUX or not self.selinux_enabled():
-            return context
-        try:
-            ret = selinux.lgetfilecon_raw(to_native(path, errors='surrogate_or_strict'))
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                self.fail_json(path=path, msg='path %s does not exist' % path)
-            else:
-                self.fail_json(path=path, msg='failed to retrieve selinux context')
-        if ret[0] == -1:
-            return context
-        # Limit split to 4 because the selevel, the last in the list,
-        # may contain ':' characters
-        context = ret[1].split(':', 3)
-        return context
-
     def user_and_group(self, path, expand=True):
         b_path = to_bytes(path, errors='surrogate_or_strict')
         if expand:
@@ -293,35 +460,6 @@ class AnsibleModule(object):
             return b_path
 
         return to_text(b_path, errors='surrogate_or_strict')
-
-    def is_special_selinux_path(self, path):
-        """
-        Returns a tuple containing (True, selinux_context) if the given path is on a
-        NFS or other 'special' fs  mount point, otherwise the return will be (False, None).
-        """
-        try:
-            f = open('/proc/mounts', 'r')
-            mount_data = f.readlines()
-            f.close()
-        except Exception:
-            return (False, None)
-        path_mount_point = self.find_mount_point(path)
-        for line in mount_data:
-            (device, mount_point, fstype, options, rest) = line.split(' ', 4)
-
-            if path_mount_point == mount_point:
-                for fs in self._selinux_special_fs:
-                    if fs in fstype:
-                        special_context = self.selinux_context(path_mount_point)
-                        return (True, special_context)
-
-        return (False, None)
-
-    def set_default_selinux_context(self, path, changed):
-        if not HAVE_SELINUX or not self.selinux_enabled():
-            return changed
-        context = self.selinux_default_context(path)
-        return self.set_context_if_different(path, context, False)
 
     def process_diff(diff, param1, param2, name):
 

@@ -69,13 +69,6 @@ try:
 except ImportError:
     has_journal = False
 
-HAVE_SELINUX = False
-try:
-    import selinux
-    HAVE_SELINUX = True
-except ImportError:
-    pass
-
 # Python2 & 3 way to get NoneType
 NoneType = type(None)
 
@@ -484,7 +477,6 @@ def heuristic_log_sanitize(data, no_log_values=None):
     if no_log_values:
         output = remove_values(output, no_log_values)
     return output
-
 
 def _load_params():
     ''' read the modules parameters and store them globally.
