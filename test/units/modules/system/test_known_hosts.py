@@ -1,10 +1,10 @@
 import os
 import tempfile
-from ansible.module_utils import basic
+from ansible.module_utils.basic import ansiblemodule
 
 from units.compat import unittest
 from ansible.module_utils._text import to_bytes
-from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.basic.ansiblemodule import AnsibleModule
 
 from ansible.modules.system.known_hosts import compute_diff, sanity_check
 
@@ -98,7 +98,7 @@ class KnownHostsDiffTestCase(unittest.TestCase):
         })
 
     def test_sanity_check(self):
-        basic._load_params = lambda: {}
+        ansiblemodule._load_params = lambda: {}
         # Module used internally to execute ssh-keygen system executable
         module = AnsibleModule(argument_spec={})
         host = '10.0.0.1'

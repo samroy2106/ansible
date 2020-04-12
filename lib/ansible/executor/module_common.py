@@ -182,8 +182,9 @@ def _ansiballz_main():
         sys.path.insert(0, modlib_path)
 
         # Monkeypatch the parameters into basic
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = json_params
+        from ansible.module_utils.basic import ansiblemodule
+        from ansible.module_utils.basic.ansiblemodule import AnsibleModule
+        ansiblemodule._ANSIBLE_ARGS = json_params
 %(coverage)s
         # Run the module!  By importing it as '__main__', it thinks it is executing as a script
         runpy.run_module(mod_name='%(module_fqn)s', init_globals=None, run_name='__main__', alter_sys=True)
@@ -276,8 +277,9 @@ def _ansiballz_main():
                 json_params = f.read()
 
             # Monkeypatch the parameters into basic
-            from ansible.module_utils import basic
-            basic._ANSIBLE_ARGS = json_params
+            from ansible.module_utils.basic import ansiblemodule
+            from ansible.module_utils.basic.ansiblemodule import AnsibleModule
+            ansiblemodule._ANSIBLE_ARGS = json_params
 
             # Run the module!  By importing it as '__main__', it thinks it is executing as a script
             runpy.run_module(mod_name='%(module_fqn)s', init_globals=None, run_name='__main__', alter_sys=True)
@@ -417,11 +419,11 @@ COLLECTION_PATH_RE = re.compile(r'/(?P<path>ansible_collections/[^/]+/[^/]+/plug
 # Detect new-style Python modules by looking for required imports:
 # import ansible_collections.[my_ns.my_col.plugins.module_utils.my_module_util]
 # from ansible_collections.[my_ns.my_col.plugins.module_utils import my_module_util]
-# import ansible.module_utils[.basic]
-# from ansible.module_utils[ import basic]
-# from ansible.module_utils[.basic import AnsibleModule]
-# from ..module_utils[ import basic]
-# from ..module_utils[.basic import AnsibleModule]
+# import ansible.module_utils.basic[.utilities]
+# from ansible.module_utils.basic[ import utilities]
+# from ansible.module_utils.basic.ansiblemodule[.AnsibleModule]
+# from ..module_utils.basic.ansiblemodule[ import AnsibleModule]
+# from ..module_utils.basic.ansiblemodule[.AnsibleModule import selinux_utilities]
 NEW_STYLE_PYTHON_MODULE_RE = re.compile(
     # Relative imports
     br'(?:from +\.{2,} *module_utils.* +import |'
@@ -966,11 +968,11 @@ def _find_module_utils(module_name, b_module_data, module_path, module_args, tas
     if _is_binary(b_module_data):
         module_substyle = module_style = 'binary'
     elif REPLACER in b_module_data:
-        # Do REPLACER before from ansible.module_utils because we need make sure
-        # we substitute "from ansible.module_utils basic" for REPLACER
+        # Do REPLACER before from ansible.module_utils.basic because we need make sure
+        # we substitute "from ansible.module_utils.basic.ansiblemodule AnsibleModule" for REPLACER
         module_style = 'new'
         module_substyle = 'python'
-        b_module_data = b_module_data.replace(REPLACER, b'from ansible.module_utils.basic import *')
+        b_module_data = b_module_data.replace(REPLACER, b'from ansible.module_utils.basic.ansiblemodule import *')
     elif NEW_STYLE_PYTHON_MODULE_RE.search(b_module_data):
         module_style = 'new'
         module_substyle = 'python'
@@ -1229,9 +1231,9 @@ def modify_module(module_name, module_path, module_args, templar, task_vars=None
 
     Example:
 
-    from ansible.module_utils.basic import *
+    from ansible.module_utils.basic.ansiblemodule AnsibleModule import *
 
-       ... will result in the insertion of basic.py into the module
+       ... will result in the insertion of ansiblemodule.py into the module
        from the module_utils/ directory in the source tree.
 
     For powershell, this code effectively no-ops, as the exec wrapper requires access to a number of

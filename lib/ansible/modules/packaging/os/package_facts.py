@@ -209,7 +209,8 @@ ansible_facts:
 import re
 
 from ansible.module_utils._text import to_native, to_text
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic.utilities import missing_required_lib
+from ansible.module_utils.basic.ansiblemodule import AnsibleModule
 from ansible.module_utils.common.process import get_bin_path
 from ansible.module_utils.facts.packages import LibMgr, CLIMgr, get_all_pkg_managers
 

@@ -28,7 +28,8 @@ from datetime import timedelta
 from distutils.version import LooseVersion
 
 
-from ansible.module_utils.basic import AnsibleModule, env_fallback, missing_required_lib
+from ansible.module_utils.basic.utilities import env_fallback, missing_required_lib
+from ansible.module_utils.basic.ansiblemodule import AnsibleModule
 from ansible.module_utils.common._collections_compat import Mapping, Sequence
 from ansible.module_utils.six import string_types
 from ansible.module_utils.six.moves.urllib.parse import urlparse

@@ -40,7 +40,7 @@ except ImportError:
 
 from ansible.module_utils._text import to_text, to_native
 from ansible.module_utils.six import integer_types, iteritems, string_types, raise_from
-from ansible.module_utils.basic import env_fallback, missing_required_lib
+from ansible.module_utils.basic.utilities import env_fallback, missing_required_lib
 
 
 class TaskError(Exception):

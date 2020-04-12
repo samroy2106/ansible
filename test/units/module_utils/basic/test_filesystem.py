@@ -17,10 +17,10 @@ realimport = builtins.__import__
 
 class TestOtherFilesystem(ModuleTestCase):
     def test_module_utils_basic_ansible_module_user_and_group(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 
@@ -32,10 +32,10 @@ class TestOtherFilesystem(ModuleTestCase):
             self.assertEqual(am.user_and_group('/path/to/file'), (0, 0))
 
     def test_module_utils_basic_ansible_module_find_mount_point(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 
@@ -58,10 +58,10 @@ class TestOtherFilesystem(ModuleTestCase):
             self.assertEqual(am.find_mount_point('/subdir/mount/path/to/whatever'), '/subdir/mount')
 
     def test_module_utils_basic_ansible_module_set_owner_if_different(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 
@@ -97,10 +97,10 @@ class TestOtherFilesystem(ModuleTestCase):
             self.assertRaises(SystemExit, am.set_owner_if_different, '/path/to/file', 'root', False)
 
     def test_module_utils_basic_ansible_module_set_group_if_different(self):
-        from ansible.module_utils import basic
-        basic._ANSIBLE_ARGS = None
+        from ansible.module_utils.basic import ansiblemodule
+        ansiblemodule._ANSIBLE_ARGS = None
 
-        am = basic.AnsibleModule(
+        am = ansiblemodule.AnsibleModule(
             argument_spec=dict(),
         )
 

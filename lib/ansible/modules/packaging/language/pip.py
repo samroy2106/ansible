@@ -275,7 +275,8 @@ except ImportError:
     HAS_SETUPTOOLS = False
     SETUPTOOLS_IMP_ERR = traceback.format_exc()
 
-from ansible.module_utils.basic import AnsibleModule, is_executable, missing_required_lib
+from ansible.module_utils.basic.utilities import is_executable, missing_required_lib
+from ansible.module_utils.basic.ansiblemodule import AnsibleModule
 from ansible.module_utils._text import to_native
 from ansible.module_utils.six import PY3
 

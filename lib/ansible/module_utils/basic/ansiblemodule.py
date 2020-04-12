@@ -1,36 +1,3 @@
-# Copyright (c), Michael DeHaan <michael.dehaan@gmail.com>, 2012-2013
-# Copyright (c), Toshio Kuratomi <tkuratomi@ansible.com> 2016
-# Simplified BSD License (see licenses/simplified_bsd.txt or https://opensource.org/licenses/BSD-2-Clause)
-
-from __future__ import absolute_import, division, print_function
-
-FILE_ATTRIBUTES = {
-    'A': 'noatime',
-    'a': 'append',
-    'c': 'compressed',
-    'C': 'nocow',
-    'd': 'nodump',
-    'D': 'dirsync',
-    'e': 'extents',
-    'E': 'encrypted',
-    'h': 'blocksize',
-    'i': 'immutable',
-    'I': 'indexed',
-    'j': 'journalled',
-    'N': 'inline',
-    's': 'zero',
-    'S': 'synchronous',
-    't': 'notail',
-    'T': 'blockroot',
-    'u': 'undelete',
-    'X': 'compressedraw',
-    'Z': 'compresseddirty',
-}
-
-# Ansible modules can be written in any language.
-# The functions available here can be used to do many common tasks,
-# to simplify development of Python modules.
-
 import __main__
 import atexit
 import errno
@@ -78,6 +45,8 @@ except ImportError:
 
 # Python2 & 3 way to get NoneType
 NoneType = type(None)
+
+from ansible.module_utils.basic import utilities
 
 from ._text import to_native, to_bytes, to_text
 from ansible.module_utils.common.text.converters import (
@@ -265,308 +234,6 @@ if not _PY_MIN:
         '"msg": "Ansible requires a minimum of Python2 version 2.6 or Python3 version 3.5. Current version: %s"}' % ''.join(sys.version.splitlines())
     )
     sys.exit(1)
-
-
-#
-# Deprecated functions
-#
-
-def get_platform():
-    '''
-    **Deprecated** Use :py:func:`platform.system` directly.
-
-    :returns: Name of the platform the module is running on in a native string
-
-    Returns a native string that labels the platform ("Linux", "Solaris", etc). Currently, this is
-    the result of calling :py:func:`platform.system`.
-    '''
-    return platform.system()
-
-# End deprecated functions
-
-
-#
-# Compat shims
-#
-
-def load_platform_subclass(cls, *args, **kwargs):
-    """**Deprecated**: Use ansible.module_utils.common.sys_info.get_platform_subclass instead"""
-    platform_cls = get_platform_subclass(cls)
-    return super(cls, platform_cls).__new__(platform_cls)
-
-
-def get_all_subclasses(cls):
-    """**Deprecated**: Use ansible.module_utils.common._utils.get_all_subclasses instead"""
-    return list(_get_all_subclasses(cls))
-
-
-# End compat shims
-
-
-def _remove_values_conditions(value, no_log_strings, deferred_removals):
-    """
-    Helper function for :meth:`remove_values`.
-
-    :arg value: The value to check for strings that need to be stripped
-    :arg no_log_strings: set of strings which must be stripped out of any values
-    :arg deferred_removals: List which holds information about nested
-        containers that have to be iterated for removals.  It is passed into
-        this function so that more entries can be added to it if value is
-        a container type.  The format of each entry is a 2-tuple where the first
-        element is the ``value`` parameter and the second value is a new
-        container to copy the elements of ``value`` into once iterated.
-    :returns: if ``value`` is a scalar, returns ``value`` with two exceptions:
-        1. :class:`~datetime.datetime` objects which are changed into a string representation.
-        2. objects which are in no_log_strings are replaced with a placeholder
-            so that no sensitive data is leaked.
-        If ``value`` is a container type, returns a new empty container.
-
-    ``deferred_removals`` is added to as a side-effect of this function.
-
-    .. warning:: It is up to the caller to make sure the order in which value
-        is passed in is correct.  For instance, higher level containers need
-        to be passed in before lower level containers. For example, given
-        ``{'level1': {'level2': 'level3': [True]} }`` first pass in the
-        dictionary for ``level1``, then the dict for ``level2``, and finally
-        the list for ``level3``.
-    """
-    if isinstance(value, (text_type, binary_type)):
-        # Need native str type
-        native_str_value = value
-        if isinstance(value, text_type):
-            value_is_text = True
-            if PY2:
-                native_str_value = to_bytes(value, errors='surrogate_or_strict')
-        elif isinstance(value, binary_type):
-            value_is_text = False
-            if PY3:
-                native_str_value = to_text(value, errors='surrogate_or_strict')
-
-        if native_str_value in no_log_strings:
-            return 'VALUE_SPECIFIED_IN_NO_LOG_PARAMETER'
-        for omit_me in no_log_strings:
-            native_str_value = native_str_value.replace(omit_me, '*' * 8)
-
-        if value_is_text and isinstance(native_str_value, binary_type):
-            value = to_text(native_str_value, encoding='utf-8', errors='surrogate_then_replace')
-        elif not value_is_text and isinstance(native_str_value, text_type):
-            value = to_bytes(native_str_value, encoding='utf-8', errors='surrogate_then_replace')
-        else:
-            value = native_str_value
-
-    elif isinstance(value, Sequence):
-        if isinstance(value, MutableSequence):
-            new_value = type(value)()
-        else:
-            new_value = []  # Need a mutable value
-        deferred_removals.append((value, new_value))
-        value = new_value
-
-    elif isinstance(value, Set):
-        if isinstance(value, MutableSet):
-            new_value = type(value)()
-        else:
-            new_value = set()  # Need a mutable value
-        deferred_removals.append((value, new_value))
-        value = new_value
-
-    elif isinstance(value, Mapping):
-        if isinstance(value, MutableMapping):
-            new_value = type(value)()
-        else:
-            new_value = {}  # Need a mutable value
-        deferred_removals.append((value, new_value))
-        value = new_value
-
-    elif isinstance(value, tuple(chain(integer_types, (float, bool, NoneType)))):
-        stringy_value = to_native(value, encoding='utf-8', errors='surrogate_or_strict')
-        if stringy_value in no_log_strings:
-            return 'VALUE_SPECIFIED_IN_NO_LOG_PARAMETER'
-        for omit_me in no_log_strings:
-            if omit_me in stringy_value:
-                return 'VALUE_SPECIFIED_IN_NO_LOG_PARAMETER'
-
-    elif isinstance(value, datetime.datetime):
-        value = value.isoformat()
-    else:
-        raise TypeError('Value of unknown type: %s, %s' % (type(value), value))
-
-    return value
-
-
-def remove_values(value, no_log_strings):
-    """ Remove strings in no_log_strings from value.  If value is a container
-    type, then remove a lot more"""
-    deferred_removals = deque()
-
-    no_log_strings = [to_native(s, errors='surrogate_or_strict') for s in no_log_strings]
-    new_value = _remove_values_conditions(value, no_log_strings, deferred_removals)
-
-    while deferred_removals:
-        old_data, new_data = deferred_removals.popleft()
-        if isinstance(new_data, Mapping):
-            for old_key, old_elem in old_data.items():
-                new_elem = _remove_values_conditions(old_elem, no_log_strings, deferred_removals)
-                new_data[old_key] = new_elem
-        else:
-            for elem in old_data:
-                new_elem = _remove_values_conditions(elem, no_log_strings, deferred_removals)
-                if isinstance(new_data, MutableSequence):
-                    new_data.append(new_elem)
-                elif isinstance(new_data, MutableSet):
-                    new_data.add(new_elem)
-                else:
-                    raise TypeError('Unknown container type encountered when removing private values from output')
-
-    return new_value
-
-
-def heuristic_log_sanitize(data, no_log_values=None):
-    ''' Remove strings that look like passwords from log messages '''
-    # Currently filters:
-    # user:pass@foo/whatever and http://username:pass@wherever/foo
-    # This code has false positives and consumes parts of logs that are
-    # not passwds
-
-    # begin: start of a passwd containing string
-    # end: end of a passwd containing string
-    # sep: char between user and passwd
-    # prev_begin: where in the overall string to start a search for
-    #   a passwd
-    # sep_search_end: where in the string to end a search for the sep
-    data = to_native(data)
-
-    output = []
-    begin = len(data)
-    prev_begin = begin
-    sep = 1
-    while sep:
-        # Find the potential end of a passwd
-        try:
-            end = data.rindex('@', 0, begin)
-        except ValueError:
-            # No passwd in the rest of the data
-            output.insert(0, data[0:begin])
-            break
-
-        # Search for the beginning of a passwd
-        sep = None
-        sep_search_end = end
-        while not sep:
-            # URL-style username+password
-            try:
-                begin = data.rindex('://', 0, sep_search_end)
-            except ValueError:
-                # No url style in the data, check for ssh style in the
-                # rest of the string
-                begin = 0
-            # Search for separator
-            try:
-                sep = data.index(':', begin + 3, end)
-            except ValueError:
-                # No separator; choices:
-                if begin == 0:
-                    # Searched the whole string so there's no password
-                    # here.  Return the remaining data
-                    output.insert(0, data[0:begin])
-                    break
-                # Search for a different beginning of the password field.
-                sep_search_end = begin
-                continue
-        if sep:
-            # Password was found; remove it.
-            output.insert(0, data[end:prev_begin])
-            output.insert(0, '********')
-            output.insert(0, data[begin:sep + 1])
-            prev_begin = begin
-
-    output = ''.join(output)
-    if no_log_values:
-        output = remove_values(output, no_log_values)
-    return output
-
-
-def _load_params():
-    ''' read the modules parameters and store them globally.
-
-    This function may be needed for certain very dynamic custom modules which
-    want to process the parameters that are being handed the module.  Since
-    this is so closely tied to the implementation of modules we cannot
-    guarantee API stability for it (it may change between versions) however we
-    will try not to break it gratuitously.  It is certainly more future-proof
-    to call this function and consume its outputs than to implement the logic
-    inside it as a copy in your own code.
-    '''
-    global _ANSIBLE_ARGS
-    if _ANSIBLE_ARGS is not None:
-        buffer = _ANSIBLE_ARGS
-    else:
-        # debug overrides to read args from file or cmdline
-
-        # Avoid tracebacks when locale is non-utf8
-        # We control the args and we pass them as utf8
-        if len(sys.argv) > 1:
-            if os.path.isfile(sys.argv[1]):
-                fd = open(sys.argv[1], 'rb')
-                buffer = fd.read()
-                fd.close()
-            else:
-                buffer = sys.argv[1]
-                if PY3:
-                    buffer = buffer.encode('utf-8', errors='surrogateescape')
-        # default case, read from stdin
-        else:
-            if PY2:
-                buffer = sys.stdin.read()
-            else:
-                buffer = sys.stdin.buffer.read()
-        _ANSIBLE_ARGS = buffer
-
-    try:
-        params = json.loads(buffer.decode('utf-8'))
-    except ValueError:
-        # This helper used too early for fail_json to work.
-        print('\n{"msg": "Error: Module unable to decode valid JSON on stdin.  Unable to figure out what parameters were passed", "failed": true}')
-        sys.exit(1)
-
-    if PY2:
-        params = json_dict_unicode_to_bytes(params)
-
-    try:
-        return params['ANSIBLE_MODULE_ARGS']
-    except KeyError:
-        # This helper does not have access to fail_json so we have to print
-        # json output on our own.
-        print('\n{"msg": "Error: Module unable to locate ANSIBLE_MODULE_ARGS in json data from stdin.  Unable to figure out what parameters were passed", '
-              '"failed": true}')
-        sys.exit(1)
-
-
-def env_fallback(*args, **kwargs):
-    ''' Load value from environment '''
-    for arg in args:
-        if arg in os.environ:
-            return os.environ[arg]
-    raise AnsibleFallbackNotFound
-
-
-def missing_required_lib(library, reason=None, url=None):
-    hostname = platform.node()
-    msg = "Failed to import the required Python library (%s) on %s's Python %s." % (library, hostname, sys.executable)
-    if reason:
-        msg += " This is required %s." % reason
-    if url:
-        msg += " See %s for more info." % url
-
-    msg += (" Please read the module documentation and install it in the appropriate location."
-            " If the required library is installed, but Ansible is using the wrong Python interpreter,"
-            " please consult the documentation on ansible_python_interpreter")
-    return msg
-
-
-class AnsibleFallbackNotFound(Exception):
-    pass
-
 
 class AnsibleModule(object):
     def __init__(self, argument_spec, bypass_checks=False, no_log=False,
@@ -773,74 +440,6 @@ class AnsibleModule(object):
             selevel=selevel, secontext=secontext, attributes=attributes,
         )
 
-    # Detect whether using selinux that is MLS-aware.
-    # While this means you can set the level/range with
-    # selinux.lsetfilecon(), it may or may not mean that you
-    # will get the selevel as part of the context returned
-    # by selinux.lgetfilecon().
-
-    def selinux_mls_enabled(self):
-        if not HAVE_SELINUX:
-            return False
-        if selinux.is_selinux_mls_enabled() == 1:
-            return True
-        else:
-            return False
-
-    def selinux_enabled(self):
-        if not HAVE_SELINUX:
-            seenabled = self.get_bin_path('selinuxenabled')
-            if seenabled is not None:
-                (rc, out, err) = self.run_command(seenabled)
-                if rc == 0:
-                    self.fail_json(msg="Aborting, target uses selinux but python bindings (libselinux-python) aren't installed!")
-            return False
-        if selinux.is_selinux_enabled() == 1:
-            return True
-        else:
-            return False
-
-    # Determine whether we need a placeholder for selevel/mls
-    def selinux_initial_context(self):
-        context = [None, None, None]
-        if self.selinux_mls_enabled():
-            context.append(None)
-        return context
-
-    # If selinux fails to find a default, return an array of None
-    def selinux_default_context(self, path, mode=0):
-        context = self.selinux_initial_context()
-        if not HAVE_SELINUX or not self.selinux_enabled():
-            return context
-        try:
-            ret = selinux.matchpathcon(to_native(path, errors='surrogate_or_strict'), mode)
-        except OSError:
-            return context
-        if ret[0] == -1:
-            return context
-        # Limit split to 4 because the selevel, the last in the list,
-        # may contain ':' characters
-        context = ret[1].split(':', 3)
-        return context
-
-    def selinux_context(self, path):
-        context = self.selinux_initial_context()
-        if not HAVE_SELINUX or not self.selinux_enabled():
-            return context
-        try:
-            ret = selinux.lgetfilecon_raw(to_native(path, errors='surrogate_or_strict'))
-        except OSError as e:
-            if e.errno == errno.ENOENT:
-                self.fail_json(path=path, msg='path %s does not exist' % path)
-            else:
-                self.fail_json(path=path, msg='failed to retrieve selinux context')
-        if ret[0] == -1:
-            return context
-        # Limit split to 4 because the selevel, the last in the list,
-        # may contain ':' characters
-        context = ret[1].split(':', 3)
-        return context
-
     def user_and_group(self, path, expand=True):
         b_path = to_bytes(path, errors='surrogate_or_strict')
         if expand:
@@ -864,34 +463,47 @@ class AnsibleModule(object):
 
         return to_text(b_path, errors='surrogate_or_strict')
 
-    def is_special_selinux_path(self, path):
-        """
-        Returns a tuple containing (True, selinux_context) if the given path is on a
-        NFS or other 'special' fs  mount point, otherwise the return will be (False, None).
-        """
-        try:
-            f = open('/proc/mounts', 'r')
-            mount_data = f.readlines()
-            f.close()
-        except Exception:
-            return (False, None)
-        path_mount_point = self.find_mount_point(path)
-        for line in mount_data:
-            (device, mount_point, fstype, options, rest) = line.split(' ', 4)
+    def process_diff(diff, param1, param2, name):
 
-            if path_mount_point == mount_point:
-                for fs in self._selinux_special_fs:
-                    if fs in fstype:
-                        special_context = self.selinux_context(path_mount_point)
-                        return (True, special_context)
+        if(name == 'context' or name == 'owner' or name == 'group'):
+            assignment1 = param1
+            assignment2 = param2
+        elif(name == 'mode'):
+            assignment1 = '0%03o' % param1
+            assignment2 = '0%03o' % param2
+        elif(name == 'attributes'):
+            assignment1 = existing.get('attr_flags')
+            assignment2 = '%s%s' % (attr_mod, attributes)
 
-        return (False, None)
+        if(name == 'attributes'):
+            if existing.get('attr_flags', '') != attributes or attr_mod == '-':
+                attrcmd = self.get_bin_path('chattr')
+                if attrcmd:
+                    attrcmd = [attrcmd, '%s%s' % (attr_mod, attributes), b_path]
+                    changed = True
 
-    def set_default_selinux_context(self, path, changed):
-        if not HAVE_SELINUX or not self.selinux_enabled():
-            return changed
-        context = self.selinux_default_context(path)
-        return self.set_context_if_different(path, context, False)
+                    diff = diff_comparison(diff, assignment1, assignment2, name)
+                    doTry = True
+                    return diff, doTry
+        else:
+            if param1 != param2:
+                diff = diff_comparison(diff, assignment1, assignment2, name)
+                doTry = True
+                return diff, doTry
+
+        return diff, False
+
+    def diff_comparison(diff, assignment1, assignment2, name):
+        if diff is not None:
+            if 'before' not in diff:
+                diff['before'] = {}
+            diff['before'][name] = assignment1
+            if 'after' not in diff:
+                diff['after'] = {}
+            diff['after'][name] = assignment2
+
+        return diff
+
 
     def set_context_if_different(self, path, context, changed, diff=None):
 
@@ -917,15 +529,10 @@ class AnsibleModule(object):
                     elif context[i] is None:
                         new_context[i] = cur_context[i]
 
-        if cur_context != new_context:
-            if diff is not None:
-                if 'before' not in diff:
-                    diff['before'] = {}
-                diff['before']['secontext'] = cur_context
-                if 'after' not in diff:
-                    diff['after'] = {}
-                diff['after']['secontext'] = new_context
+        tuple = process_diff(diff, curr_context, new_context, 'secontext')
+        diff = tuple[0]
 
+        if(tuple[1] == True):
             try:
                 if self.check_mode:
                     return True
@@ -936,6 +543,7 @@ class AnsibleModule(object):
             if rc != 0:
                 self.fail_json(path=path, msg='set selinux context failed')
             changed = True
+
         return changed
 
     def set_owner_if_different(self, path, owner, changed, diff=None, expand=True):
@@ -960,15 +568,10 @@ class AnsibleModule(object):
                 path = to_text(b_path)
                 self.fail_json(path=path, msg='chown failed: failed to look up user %s' % owner)
 
-        if orig_uid != uid:
-            if diff is not None:
-                if 'before' not in diff:
-                    diff['before'] = {}
-                diff['before']['owner'] = orig_uid
-                if 'after' not in diff:
-                    diff['after'] = {}
-                diff['after']['owner'] = uid
+        tuple = process_diff(diff, orig_uid, uid, 'owner')
+        diff = tuple[0]
 
+        if(tuple[1] == True):
             if self.check_mode:
                 return True
             try:
@@ -977,6 +580,7 @@ class AnsibleModule(object):
                 path = to_text(b_path)
                 self.fail_json(path=path, msg='chown failed: %s' % (to_text(e)))
             changed = True
+
         return changed
 
     def set_group_if_different(self, path, group, changed, diff=None, expand=True):
@@ -1001,15 +605,10 @@ class AnsibleModule(object):
                 path = to_text(b_path)
                 self.fail_json(path=path, msg='chgrp failed: failed to look up group %s' % group)
 
-        if orig_gid != gid:
-            if diff is not None:
-                if 'before' not in diff:
-                    diff['before'] = {}
-                diff['before']['group'] = orig_gid
-                if 'after' not in diff:
-                    diff['after'] = {}
-                diff['after']['group'] = gid
+        tuple = process_diff(diff, orig_gid, gid, 'group')
+        diff = tuple[0]
 
+        if(tuple[1] == True):
             if self.check_mode:
                 return True
             try:
@@ -1018,6 +617,7 @@ class AnsibleModule(object):
                 path = to_text(b_path)
                 self.fail_json(path=path, msg='chgrp failed')
             changed = True
+
         return changed
 
     def set_mode_if_different(self, path, mode, changed, diff=None, expand=True):
@@ -1052,16 +652,11 @@ class AnsibleModule(object):
 
         prev_mode = stat.S_IMODE(path_stat.st_mode)
 
+        tuple = process_diff(diff, prev_mode, mode, 'mode')
+        diff = tuple[0]
+
+        if(tuple[1] == True):
         if prev_mode != mode:
-
-            if diff is not None:
-                if 'before' not in diff:
-                    diff['before'] = {}
-                diff['before']['mode'] = '0%03o' % prev_mode
-                if 'after' not in diff:
-                    diff['after'] = {}
-                diff['after']['mode'] = '0%03o' % mode
-
             if self.check_mode:
                 return True
             # FIXME: comparison against string above will cause this to be executed
@@ -1098,6 +693,7 @@ class AnsibleModule(object):
 
             if new_mode != prev_mode:
                 changed = True
+
         return changed
 
     def set_attributes_if_different(self, path, attributes, changed, diff=None, expand=True):
@@ -1119,28 +715,19 @@ class AnsibleModule(object):
             attr_mod = attributes[0]
             attributes = attributes[1:]
 
-        if existing.get('attr_flags', '') != attributes or attr_mod == '-':
-            attrcmd = self.get_bin_path('chattr')
-            if attrcmd:
-                attrcmd = [attrcmd, '%s%s' % (attr_mod, attributes), b_path]
-                changed = True
+        tuple = process_diff(diff, NULL, NULL, 'attributes')
+        diff = tuple[0]
 
-                if diff is not None:
-                    if 'before' not in diff:
-                        diff['before'] = {}
-                    diff['before']['attributes'] = existing.get('attr_flags')
-                    if 'after' not in diff:
-                        diff['after'] = {}
-                    diff['after']['attributes'] = '%s%s' % (attr_mod, attributes)
+        if(tuple[1] == True):
+            if not self.check_mode:
+                try:
+                    rc, out, err = self.run_command(attrcmd)
+                    if rc != 0 or err:
+                        raise Exception("Error while setting attributes: %s" % (out + err))
+                except Exception as e:
+                    self.fail_json(path=to_text(b_path), msg='chattr failed',
+                        details=to_native(e), exception=traceback.format_exc())
 
-                if not self.check_mode:
-                    try:
-                        rc, out, err = self.run_command(attrcmd)
-                        if rc != 0 or err:
-                            raise Exception("Error while setting attributes: %s" % (out + err))
-                    except Exception as e:
-                        self.fail_json(path=to_text(b_path), msg='chattr failed',
-                                       details=to_native(e), exception=traceback.format_exc())
         return changed
 
     def get_file_attributes(self, path):
@@ -1821,8 +1408,63 @@ class AnsibleModule(object):
                         fallback_args = item
                 try:
                     param[k] = fallback_strategy(*fallback_args, **fallback_kwargs)
-                except AnsibleFallbackNotFound:
+                except utilities.AnsibleFallbackNotFound:
                     continue
+
+    def _load_params():
+        ''' read the modules parameters and store them globally.
+
+        This function may be needed for certain very dynamic custom modules which
+        want to process the parameters that are being handed the module.  Since
+        this is so closely tied to the implementation of modules we cannot
+        guarantee API stability for it (it may change between versions) however we
+        will try not to break it gratuitously.  It is certainly more future-proof
+        to call this function and consume its outputs than to implement the logic
+        inside it as a copy in your own code.
+        '''
+        global _ANSIBLE_ARGS
+        if _ANSIBLE_ARGS is not None:
+            buffer = _ANSIBLE_ARGS
+        else:
+            # debug overrides to read args from file or cmdline
+
+            # Avoid tracebacks when locale is non-utf8
+            # We control the args and we pass them as utf8
+            if len(sys.argv) > 1:
+                if os.path.isfile(sys.argv[1]):
+                    fd = open(sys.argv[1], 'rb')
+                    buffer = fd.read()
+                    fd.close()
+                else:
+                    buffer = sys.argv[1]
+                    if PY3:
+                        buffer = buffer.encode('utf-8', errors='surrogateescape')
+            # default case, read from stdin
+            else:
+                if PY2:
+                    buffer = sys.stdin.read()
+                else:
+                    buffer = sys.stdin.buffer.read()
+            _ANSIBLE_ARGS = buffer
+
+        try:
+            params = json.loads(buffer.decode('utf-8'))
+        except ValueError:
+            # This helper used too early for fail_json to work.
+            print('\n{"msg": "Error: Module unable to decode valid JSON on stdin.  Unable to figure out what parameters were passed", "failed": true}')
+            sys.exit(1)
+
+        if PY2:
+            params = json_dict_unicode_to_bytes(params)
+
+        try:
+            return params['ANSIBLE_MODULE_ARGS']
+        except KeyError:
+            # This helper does not have access to fail_json so we have to print
+            # json output on our own.
+            print('\n{"msg": "Error: Module unable to locate ANSIBLE_MODULE_ARGS in json data from stdin.  Unable to figure out what parameters were passed", '
+                  '"failed": true}')
+            sys.exit(1)
 
     def _load_params(self):
         ''' read the input and set the params attribute.
@@ -1919,7 +1561,7 @@ class AnsibleModule(object):
                     param_val = str(param_val)
                 elif isinstance(param_val, text_type):
                     param_val = param_val.encode('utf-8')
-                log_args[param] = heuristic_log_sanitize(param_val, self.no_log_values)
+                log_args[param] = utilities.heuristic_log_sanitize(param_val, self.no_log_values)
 
         msg = ['%s=%s' % (to_native(arg), to_native(val)) for arg, val in log_args.items()]
         if msg:
@@ -2365,7 +2007,7 @@ class AnsibleModule(object):
                         continue
                     else:
                         is_passwd = True
-                arg = heuristic_log_sanitize(arg, self.no_log_values)
+                arg = utilities.heuristic_log_sanitize(arg, self.no_log_values)
                 clean_args.append(arg)
             self._clean = ' '.join(shlex_quote(arg) for arg in clean_args)
 
@@ -2623,7 +2265,7 @@ class AnsibleModule(object):
             os.umask(old_umask)
 
         if rc != 0 and check_rc:
-            msg = heuristic_log_sanitize(stderr.rstrip(), self.no_log_values)
+            msg = utilities.heuristic_log_sanitize(stderr.rstrip(), self.no_log_values)
             self.fail_json(cmd=self._clean_args(args), rc=rc, stdout=stdout, stderr=stderr, msg=msg)
 
         # reset the pwd
@@ -2670,7 +2312,3 @@ class AnsibleModule(object):
                 buffer_size = 9000  # use sane default JIC
 
         return buffer_size
-
-
-def get_module_path():
-    return os.path.dirname(os.path.realpath(__file__))
